@@ -1,19 +1,68 @@
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Firebase共有アプリ</title>
+</head>
+<body>
+    <h1>データ共有テスト</h1>
+    
+    <input type="text" id="messageInput" placeholder="メッセージを入力">
+    <button id="sendBtn">送信</button>
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAkmuzhEK9XLH_vZ5ot0Puw9MJzdYq94QU",
-    authDomain: "my-shared-app-e20d2.firebaseapp.com",
-    projectId: "my-shared-app-e20d2",
-    storageBucket: "my-shared-app-e20d2.firebasestorage.app",
-    messagingSenderId: "559910534550",
-    appId: "1:559910534550:web:bfdcda931b71573b7831b7"
-  };
+    <ul id="list"></ul>
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
+    <!-- Firebase SDKの読み込み (type="module"が必須) -->
+    <script type="module">
+        // Firebaseから必要な機能をインポート
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } 
+               from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyAkmuzhEK9XLH_vZ5ot0Puw9MJzdYq94QU",
+          authDomain: "my-shared-app-e20d2.firebaseapp.com",
+          projectId: "my-shared-app-e20d2",
+          storageBucket: "my-shared-app-e20d2.firebasestorage.app",
+          messagingSenderId: "559910534550",
+          appId: "1:559910534550:web:bfdcda931b71573b7831b7"
+        };
+
+        // Firebaseの初期化
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- データの保存 (書き込み) ---
+        const sendBtn = document.getElementById("sendBtn");
+        const messageInput = document.getElementById("messageInput");
+
+        sendBtn.addEventListener("click", async () => {
+            const text = messageInput.value;
+            if (text === "") return;
+
+            try {
+                await addDoc(collection(db, "messages"), {
+                    text: text,
+                    timestamp: new Date()
+                });
+                messageInput.value = ""; // 入力欄を空にする
+            } catch (e) {
+                console.error("エラー: ", e);
+            }
+        });
+
+        // --- データの取得 (リアルタイム読み込み) ---
+        const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+        onSnapshot(q, (snapshot) => {
+            const list = document.getElementById("list");
+            list.innerHTML = ""; // 一旦クリア
+            snapshot.forEach((doc) => {
+                const li = document.createElement("li");
+                li.textContent = doc.data().text;
+                list.appendChild(li);
+            });
+        });
+    </script>
+</body>
+</html>
